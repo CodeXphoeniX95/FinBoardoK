@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getBudgets, createBudget, deleteBudget } from '../utils/data';
 import { formatAmount, validateBudget } from '../utils/helpers';
+import { IconPlus, IconTrash, IconPin, IconRefresh, IconX, IconWallet } from './Icons';
 
 function Budgets() {
   const [budgets, setBudgets] = useState([]);
@@ -36,7 +37,6 @@ function Budgets() {
     e.preventDefault();
     setError('');
 
-    // Validation
     const budgetData = {
       ...formData,
       initialAmount: parseFloat(formData.initialAmount) || 0
@@ -73,17 +73,26 @@ function Budgets() {
   return (
     <div className="budgets-page">
       <div className="page-header">
-        <h1>Mes Budgets</h1>
+        <div>
+          <h1>Mes Budgets</h1>
+          <p className="subtitle">Gérez vos enveloppes budgétaires et suivez vos allocations</p>
+        </div>
         <button className="btn-primary" onClick={() => setShowForm(true)}>
-          + Nouveau budget
+          <IconPlus size={18} />
+          <span>Nouveau budget</span>
         </button>
       </div>
 
       <div className="budgets-list">
         {budgets.length === 0 ? (
           <div className="empty-state">
-            <p>📊 Aucun budget créé</p>
-            <p>Commencez par créer votre premier budget !</p>
+            <IconWallet size={48} className="empty-icon" />
+            <p className="empty-title">Aucun budget configuré</p>
+            <p className="empty-desc">Commencez par créer votre première enveloppe budgétaire !</p>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>
+              <IconPlus size={18} />
+              <span>Créer un budget</span>
+            </button>
           </div>
         ) : (
           budgets.map(budget => (
@@ -92,15 +101,19 @@ function Budgets() {
                 <div>
                   <h3>{budget.name}</h3>
                   <span className={`budget-badge ${budget.type.toLowerCase()}`}>
-                    {budget.type === 'FIXE' ? '📌 Fixe' : '🔄 Évolutif'}
+                    {budget.type === 'FIXE' ? (
+                      <><IconPin size={12} /> Fixe</>
+                    ) : (
+                      <><IconRefresh size={12} /> Évolutif</>
+                    )}
                   </span>
                 </div>
                 <button 
                   className="delete-btn" 
                   onClick={() => handleDelete(budget.id)}
-                  title="Supprimer"
+                  title="Supprimer le budget"
                 >
-                  🗑️
+                  <IconTrash size={16} />
                 </button>
               </div>
 
@@ -117,8 +130,8 @@ function Budgets() {
                   </div>
                 )}
 
-                <div className="budget-progress">
-                  {budget.type === 'FIXE' && (
+                {budget.type === 'FIXE' && budget.initialAmount > 0 && (
+                  <div className="budget-progress">
                     <div className="progress-bar">
                       <div 
                         className="progress-fill"
@@ -127,13 +140,16 @@ function Budgets() {
                         }}
                       ></div>
                     </div>
-                  )}
-                </div>
+                    <span className="progress-text">
+                      {Math.round(Math.max(0, Math.min(100, (budget.currentBalance / budget.initialAmount) * 100)))}% restant
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="budget-card-footer">
                 <small>
-                  Créé le {budget.createdAt?.toDate().toLocaleDateString('fr-FR') || 'Date inconnue'}
+                  Créé le {budget.createdAt?.toDate().toLocaleDateString('fr-FR') || 'Récemment'}
                 </small>
               </div>
             </div>
@@ -147,7 +163,9 @@ function Budgets() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Créer un budget</h2>
-              <button className="close-btn" onClick={() => setShowForm(false)}>✕</button>
+              <button className="close-btn" onClick={() => setShowForm(false)}>
+                <IconX size={20} />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="budget-form">
@@ -158,7 +176,7 @@ function Budgets() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Ex: Budget Janvier"
+                  placeholder="Ex: Budget Mensuel, Transport, Projets"
                   required
                 />
               </div>
@@ -171,16 +189,18 @@ function Budgets() {
                     className={formData.type === 'FIXE' ? 'type-btn active' : 'type-btn'}
                     onClick={() => setFormData({ ...formData, type: 'FIXE' })}
                   >
-                    📌 Fixe
-                    <small>Montant défini au départ</small>
+                    <IconPin size={16} />
+                    <span>Fixe</span>
+                    <small>Plafond défini au départ</small>
                   </button>
                   <button
                     type="button"
                     className={formData.type === 'EVOLUTIF' ? 'type-btn active' : 'type-btn'}
                     onClick={() => setFormData({ ...formData, type: 'EVOLUTIF' })}
                   >
-                    🔄 Évolutif
-                    <small>Revenus et dépenses illimités</small>
+                    <IconRefresh size={16} />
+                    <span>Évolutif</span>
+                    <small>Flux de dépenses et revenus libres</small>
                   </button>
                 </div>
               </div>
@@ -214,7 +234,7 @@ function Budgets() {
                     step="1"
                   />
                   <small className="form-hint">
-                    Laissez vide pour commencer à 0
+                    Laissez vide pour démarrer avec un solde à 0 FCFA
                   </small>
                 </div>
               )}
@@ -226,7 +246,7 @@ function Budgets() {
                   Annuler
                 </button>
                 <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Création...' : 'Créer'}
+                  {loading ? 'Création...' : 'Créer le budget'}
                 </button>
               </div>
             </form>

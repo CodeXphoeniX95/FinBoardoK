@@ -1,240 +1,190 @@
 import { useState, useEffect } from 'react';
-import { getBudgets, createBudget, deleteBudget } from '../utils/data';
-import { formatAmount, validateBudget } from '../utils/helpers';
+import { getActions, getBudgets, deleteAction } from '../utils/data';
+import { formatAmount, formatDate, exportToCSV, getCategoryById } from '../utils/helpers';
+import { 
+  IconDownload, 
+  IconTrash, 
+  IconTrendingDown, 
+  IconTrendingUp, 
+  IconPiggyBank, 
+  IconHistory, 
+  IconCategory 
+} from './Icons';
 
-function Budgets() {
+function History() {
+  const [actions, setActions] = useState([]);
   const [budgets, setBudgets] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    type: 'EVOLUTIF',
-    initialAmount: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterBudget, setFilterBudget] = useState('ALL');
 
   useEffect(() => {
-    loadBudgets();
+    loadData();
   }, []);
 
-  const loadBudgets = async () => {
-    const result = await getBudgets();
-    if (result.success) {
-      setBudgets(result.data);
-    }
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    // Validation
-    const budgetData = {
-      ...formData,
-      initialAmount: parseFloat(formData.initialAmount) || 0
-    };
-
-    const validation = validateBudget(budgetData);
-    if (!validation.isValid) {
-      setError(Object.values(validation.errors)[0]);
-      return;
-    }
-
+  const loadData = async () => {
     setLoading(true);
-    const result = await createBudget(budgetData);
+    const [actionsRes, budgetsRes] = await Promise.all([
+      getActions(),
+      getBudgets()
+    ]);
 
-    if (result.success) {
-      setShowForm(false);
-      setFormData({ name: '', type: 'EVOLUTIF', initialAmount: '' });
-      loadBudgets();
-    } else {
-      setError(result.error || 'Erreur lors de la création');
+    if (actionsRes.success) {
+      setActions(actionsRes.data);
+    }
+    if (budgetsRes.success) {
+      setBudgets(budgetsRes.data);
     }
     setLoading(false);
   };
 
-  const handleDelete = async (budgetId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce budget ?')) {
-      const result = await deleteBudget(budgetId);
-      if (result.success) {
-        loadBudgets();
+  const handleDelete = async (actionId) => {
+    if (window.confirm('Voulez-vous vraiment supprimer cette transaction ?')) {
+      const res = await deleteAction(actionId);
+      if (res.success) {
+        loadData();
       }
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(filteredActions, `Heleanaf_Transactions_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const filteredActions = actions.filter(action => {
+    if (filterType !== 'ALL' && action.type !== filterType) return false;
+    if (filterBudget !== 'ALL' && action.budgetId !== filterBudget) return false;
+    return true;
+  });
+
+  const getBudgetName = (budgetId) => {
+    const budget = budgets.find(b => b.id === budgetId);
+    return budget ? budget.name : 'Budget inconnu';
+  };
+
+  if (loading) {
+    return (
+      <div className="history-loading">
+        <div className="loader"></div>
+        <p>Chargement de l'historique...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="budgets-page">
+    <div className="history-page">
       <div className="page-header">
-        <h1>Mes Budgets</h1>
-        <button className="btn-primary" onClick={() => setShowForm(true)}>
-          + Nouveau budget
+        <div>
+          <h1>Historique des opérations</h1>
+          <p className="subtitle">Consultez, filtrez et exportez toutes vos transactions sous forme de tableau</p>
+        </div>
+        <button className="btn-secondary" onClick={handleExport} disabled={filteredActions.length === 0}>
+          <IconDownload size={18} />
+          <span>Exporter CSV</span>
         </button>
       </div>
 
-      <div className="budgets-list">
-        {budgets.length === 0 ? (
-          <div className="empty-state">
-            <p>📊 Aucun budget créé</p>
-            <p>Commencez par créer votre premier budget !</p>
-          </div>
-        ) : (
-          budgets.map(budget => (
-            <div key={budget.id} className="budget-card">
-              <div className="budget-card-header">
-                <div>
-                  <h3>{budget.name}</h3>
-                  <span className={`budget-badge ${budget.type.toLowerCase()}`}>
-                    {budget.type === 'FIXE' ? '📌 Fixe' : '🔄 Évolutif'}
-                  </span>
-                </div>
-                <button 
-                  className="delete-btn" 
-                  onClick={() => handleDelete(budget.id)}
-                  title="Supprimer"
-                >
-                  🗑️
-                </button>
-              </div>
+      {/* Filtres */}
+      <div className="filters-container card">
+        <div className="filter-group">
+          <label>Type d'opération</label>
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="ALL">Toutes les opérations</option>
+            <option value="DEPENSE">Dépenses uniquement</option>
+            <option value="REVENU">Revenus uniquement</option>
+            <option value="EPARGNE">Épargnes uniquement</option>
+          </select>
+        </div>
 
-              <div className="budget-card-body">
-                <div className="budget-info">
-                  <span className="label">Solde actuel</span>
-                  <span className="value">{formatAmount(budget.currentBalance || 0)}</span>
-                </div>
-
-                {budget.type === 'FIXE' && (
-                  <div className="budget-info">
-                    <span className="label">Montant initial</span>
-                    <span className="value">{formatAmount(budget.initialAmount || 0)}</span>
-                  </div>
-                )}
-
-                <div className="budget-progress">
-                  {budget.type === 'FIXE' && (
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ 
-                          width: `${Math.max(0, Math.min(100, (budget.currentBalance / budget.initialAmount) * 100))}%` 
-                        }}
-                      ></div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="budget-card-footer">
-                <small>
-                  Créé le {budget.createdAt?.toDate().toLocaleDateString('fr-FR') || 'Date inconnue'}
-                </small>
-              </div>
-            </div>
-          ))
-        )}
+        <div className="filter-group">
+          <label>Budget rattaché</label>
+          <select value={filterBudget} onChange={(e) => setFilterBudget(e.target.value)}>
+            <option value="ALL">Tous les budgets</option>
+            {budgets.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Modal création budget */}
-      {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Créer un budget</h2>
-              <button className="close-btn" onClick={() => setShowForm(false)}>✕</button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="budget-form">
-              <div className="form-group">
-                <label>Nom du budget</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Ex: Budget Janvier"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Type de budget</label>
-                <div className="type-selector">
-                  <button
-                    type="button"
-                    className={formData.type === 'FIXE' ? 'type-btn active' : 'type-btn'}
-                    onClick={() => setFormData({ ...formData, type: 'FIXE' })}
-                  >
-                    📌 Fixe
-                    <small>Montant défini au départ</small>
-                  </button>
-                  <button
-                    type="button"
-                    className={formData.type === 'EVOLUTIF' ? 'type-btn active' : 'type-btn'}
-                    onClick={() => setFormData({ ...formData, type: 'EVOLUTIF' })}
-                  >
-                    🔄 Évolutif
-                    <small>Revenus et dépenses illimités</small>
-                  </button>
-                </div>
-              </div>
-
-              {formData.type === 'FIXE' && (
-                <div className="form-group">
-                  <label>Montant initial (FCFA)</label>
-                  <input
-                    type="number"
-                    name="initialAmount"
-                    value={formData.initialAmount}
-                    onChange={handleChange}
-                    placeholder="50000"
-                    required={formData.type === 'FIXE'}
-                    min="0"
-                    step="1"
-                  />
-                </div>
-              )}
-
-              {formData.type === 'EVOLUTIF' && (
-                <div className="form-group">
-                  <label>Montant initial (optionnel)</label>
-                  <input
-                    type="number"
-                    name="initialAmount"
-                    value={formData.initialAmount}
-                    onChange={handleChange}
-                    placeholder="0"
-                    min="0"
-                    step="1"
-                  />
-                  <small className="form-hint">
-                    Laissez vide pour commencer à 0
-                  </small>
-                </div>
-              )}
-
-              {error && <div className="error-message">{error}</div>}
-
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                  Annuler
-                </button>
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Création...' : 'Créer'}
-                </button>
-              </div>
-            </form>
+      {/* Tableau des transactions */}
+      <div className="history-table-card card">
+        {filteredActions.length === 0 ? (
+          <div className="empty-state">
+            <IconHistory size={48} className="empty-icon" />
+            <p className="empty-title">Aucune transaction trouvée</p>
+            <p className="empty-desc">Aucune opération ne correspond aux filtres sélectionnés.</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description / Intitulé</th>
+                  <th>Catégorie</th>
+                  <th>Budget</th>
+                  <th>Date</th>
+                  <th>Montant</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredActions.map(action => {
+                  const categoryObj = getCategoryById(action.category);
+                  const isExpense = action.type === 'DEPENSE';
+                  const isRevenue = action.type === 'REVENU';
+                  const isSavings = action.type === 'EPARGNE';
+
+                  return (
+                    <tr key={action.id}>
+                      <td>
+                        <span className={`badge ${
+                          isExpense ? 'badge-danger' : (isRevenue ? 'badge-success' : 'badge-info')
+                        }`}>
+                          {isExpense && <IconTrendingDown size={14} />}
+                          {isRevenue && <IconTrendingUp size={14} />}
+                          {isSavings && <IconPiggyBank size={14} />}
+                          <span style={{ marginLeft: '4px' }}>{action.type}</span>
+                        </span>
+                      </td>
+                      <td className="font-semibold">
+                        {action.description || 'Transaction sans titre'}
+                      </td>
+                      <td>
+                        <div className="category-cell">
+                          <IconCategory name={action.category} size={16} />
+                          <span>{categoryObj?.name || 'Général'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-info">{getBudgetName(action.budgetId)}</span>
+                      </td>
+                      <td className="text-muted">{formatDate(action.date, 'dd MMM yyyy')}</td>
+                      <td className={`amount-cell ${
+                        isExpense ? 'text-danger' : (isRevenue ? 'text-success' : 'text-primary')
+                      }`}>
+                        {isExpense ? '-' : '+'}{formatAmount(action.amount)}
+                      </td>
+                      <td>
+                        <button 
+                          className="btn-icon danger-icon"
+                          onClick={() => handleDelete(action.id)}
+                          title="Supprimer la transaction"
+                        >
+                          <IconTrash size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-export default Budgets;
+export default History;

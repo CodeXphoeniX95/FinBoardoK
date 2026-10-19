@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { auth } from './utils/firebase.js';
+import { supabase } from './utils/supabase.js';
 import Auth from './components/Auth.jsx';
 import Navbar from './components/Navbar.jsx';
 import Dashboard from './components/Dashboard.jsx';
@@ -15,19 +15,26 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
+    // Récupérer la session active initiale
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Écouter les changements d'état d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
     return (
       <div className="app-loading">
         <div className="loader"></div>
-        <p>Chargement...</p>
+        <p>Chargement de l'application...</p>
       </div>
     );
   }

@@ -81,14 +81,14 @@ export const formatDate = (date, formatStr = 'dd MMM yyyy') => {
 // ==================== CATÉGORIES ====================
 
 export const DEFAULT_CATEGORIES = [
-  { id: 'nourriture', name: 'Nourriture', icon: '🍔', color: '#EF4444' },
-  { id: 'transport', name: 'Transport', icon: '🚗', color: '#F59E0B' },
-  { id: 'logement', name: 'Logement', icon: '🏠', color: '#3B82F6' },
-  { id: 'business', name: 'Business', icon: '💼', color: '#8B5CF6' },
-  { id: 'loisirs', name: 'Loisirs', icon: '🎮', color: '#EC4899' },
-  { id: 'sante', name: 'Santé', icon: '⚕️', color: '#10B981' },
-  { id: 'education', name: 'Éducation', icon: '📚', color: '#06B6D4' },
-  { id: 'autres', name: 'Autres', icon: '📦', color: '#6B7280' }
+  { id: 'nourriture', name: 'Nourriture', icon: 'food', color: '#EF4444' },
+  { id: 'transport', name: 'Transport', icon: 'transport', color: '#F59E0B' },
+  { id: 'logement', name: 'Logement', icon: 'logement', color: '#3B82F6' },
+  { id: 'business', name: 'Business', icon: 'business', color: '#8B5CF6' },
+  { id: 'loisirs', name: 'Loisirs', icon: 'loisirs', color: '#EC4899' },
+  { id: 'sante', name: 'Santé', icon: 'sante', color: '#10B981' },
+  { id: 'education', name: 'Éducation', icon: 'education', color: '#06B6D4' },
+  { id: 'autres', name: 'Autres', icon: 'autres', color: '#6B7280' }
 ];
 
 export const getCategoryById = (categoryId) => {
@@ -122,8 +122,9 @@ export const exportToCSV = (data, filename = 'fintrack_export.csv') => {
 // ==================== VALIDATION ====================
 
 export const validateEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  return regex.test(email.trim());
 };
 
 export const validateAmount = (amount) => {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { logout } from '../utils/data';
+import { IconDownload, IconTrash, IconLogout, IconSettings, IconWallet } from './Icons';
 
 function Settings() {
   const [currency, setCurrency] = useState('FCFA');
@@ -15,18 +16,24 @@ function Settings() {
   return (
     <div className="settings-page">
       <div className="page-header">
-        <h1>Paramètres</h1>
+        <div>
+          <h1>Paramètres</h1>
+          <p className="subtitle">Gérez vos préférences et la sécurité de votre compte</p>
+        </div>
       </div>
 
       <div className="settings-sections">
         {/* Préférences */}
         <div className="settings-section">
-          <h3>Préférences</h3>
+          <div className="section-title">
+            <IconSettings size={20} />
+            <h3>Préférences d'affichage</h3>
+          </div>
           
           <div className="setting-item">
             <div className="setting-info">
-              <h4>Devise</h4>
-              <p>Choisissez votre monnaie principale</p>
+              <h4>Devise principale</h4>
+              <p>Monnaie utilisée pour l'affichage de vos soldes</p>
             </div>
             <select 
               value={currency} 
@@ -41,8 +48,8 @@ function Settings() {
 
           <div className="setting-item">
             <div className="setting-info">
-              <h4>Notifications</h4>
-              <p>Recevoir des rappels et alertes</p>
+              <h4>Notifications & Alertes</h4>
+              <p>Recevoir des rappels de suivi de budget</p>
             </div>
             <label className="toggle-switch">
               <input 
@@ -55,51 +62,59 @@ function Settings() {
           </div>
         </div>
 
-        {/* Données */}
+        {/* Données & Sécurité */}
         <div className="settings-section">
-          <h3>Données</h3>
+          <div className="section-title">
+            <IconWallet size={20} />
+            <h3>Données & Sécurité</h3>
+          </div>
           
           <div className="setting-item">
             <div className="setting-info">
-              <h4>Exporter mes données</h4>
-              <p>Télécharger toutes vos données en CSV</p>
+              <h4>Exporter les données</h4>
+              <p>Télécharger vos transactions au format CSV</p>
             </div>
             <button className="btn-secondary">
-              📥 Exporter
+              <IconDownload size={16} />
+              <span>Exporter</span>
             </button>
           </div>
 
           <div className="setting-item danger">
             <div className="setting-info">
-              <h4>Supprimer mon compte</h4>
-              <p>Cette action est irréversible</p>
+              <h4>Supprimer le compte</h4>
+              <p>Supprimer définitivement vos données financières</p>
             </div>
             <button className="btn-danger">
-              🗑️ Supprimer
+              <IconTrash size={16} />
+              <span>Supprimer</span>
             </button>
           </div>
         </div>
 
         {/* À propos */}
         <div className="settings-section">
-          <h3>À propos</h3>
-          
           <div className="about-info">
-            <h4>FinTrack v1.0</h4>
+            <div className="settings-brand-header">
+              <img src="/logo.png" alt="Heleanaf Logo" className="settings-logo-img" />
+              <h4>Heleanaf Enterprise v1.0</h4>
+            </div>
             <p>
-              Votre assistant financier personnel intelligent.
-              Développé avec ❤️ pour simplifier la gestion de vos finances.
+              Plateforme moderne de gestion financière personnelle et collaborative.
             </p>
-            <p className="tech-stack">
-              React • Firebase • Chart.js
-            </p>
+            <div className="tech-stack-badges">
+              <span>React 19</span>
+              <span>Supabase</span>
+              <span>Chart.js</span>
+            </div>
           </div>
         </div>
 
         {/* Déconnexion */}
         <div className="settings-section">
           <button className="btn-logout" onClick={handleLogout}>
-            🚪 Se déconnecter
+            <IconLogout size={18} />
+            <span>Se déconnecter de la session</span>
           </button>
         </div>
       </div>

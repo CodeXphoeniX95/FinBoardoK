@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend } from 'chart.js';
-import { Pie, Line, Bar } from 'react-chartjs-2';
+import { Pie, Line } from 'react-chartjs-2';
 import { getActions, getBudgets } from '../utils/data';
 import { calculateStats, filterByPeriod, formatAmount, DEFAULT_CATEGORIES } from '../utils/helpers';
 import ActionForm from './ActionForm';
+import { 
+  IconWallet, 
+  IconTrendingDown, 
+  IconTrendingUp, 
+  IconPiggyBank, 
+  IconPlus, 
+  IconPin, 
+  IconRefresh 
+} from './Icons';
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend);
 
@@ -47,7 +56,6 @@ function Dashboard() {
     setLoading(false);
   };
 
-  // Données pour le graphique circulaire (répartition par catégorie)
   const getCategoryData = () => {
     const filteredActions = filterByPeriod(actions, period).filter(a => a.type === 'DEPENSE');
     const categoryTotals = {};
@@ -73,13 +81,11 @@ function Dashboard() {
       datasets: [{
         data,
         backgroundColor: colors,
-        borderWidth: 2,
-        borderColor: '#fff'
+        borderWidth: 0,
       }]
     };
   };
 
-  // Données pour la courbe d'évolution
   const getEvolutionData = () => {
     const filteredActions = filterByPeriod(actions, period);
     const sortedActions = [...filteredActions].sort((a, b) => {
@@ -107,20 +113,23 @@ function Dashboard() {
     return {
       labels,
       datasets: [{
-        label: 'Évolution du solde',
+        label: 'Solde (FCFA)',
         data,
-        borderColor: '#10B981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.4,
-        fill: true
+        borderColor: '#6366F1',
+        backgroundColor: 'rgba(99, 102, 241, 0.08)',
+        tension: 0.35,
+        fill: true,
+        pointBackgroundColor: '#6366F1',
+        pointRadius: 3
       }]
     };
   };
 
   if (loading) {
     return (
-      <div className="dashboard">
-        <div className="loading">Chargement...</div>
+      <div className="dashboard-loading">
+        <div className="loader"></div>
+        <p>Chargement du tableau de bord...</p>
       </div>
     );
   }
@@ -128,9 +137,13 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Tableau de bord</h1>
+        <div>
+          <h1>Tableau de bord</h1>
+          <p className="subtitle">Vue d'ensemble et analyse de vos activités financières</p>
+        </div>
         <button className="btn-primary" onClick={() => setShowActionForm(true)}>
-          + Ajouter une action
+          <IconPlus size={18} />
+          <span>Nouvelle transaction</span>
         </button>
       </div>
 
@@ -164,8 +177,10 @@ function Dashboard() {
 
       {/* Cartes statistiques */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
+        <div className="stat-card balance">
+          <div className="stat-icon-wrapper">
+            <IconWallet size={24} />
+          </div>
           <div className="stat-content">
             <h3>Solde Total</h3>
             <p className="stat-amount">{formatAmount(stats.totalBalance)}</p>
@@ -173,7 +188,9 @@ function Dashboard() {
         </div>
 
         <div className="stat-card danger">
-          <div className="stat-icon">📉</div>
+          <div className="stat-icon-wrapper">
+            <IconTrendingDown size={24} />
+          </div>
           <div className="stat-content">
             <h3>Dépenses</h3>
             <p className="stat-amount">{formatAmount(stats.totalDepenses)}</p>
@@ -181,7 +198,9 @@ function Dashboard() {
         </div>
 
         <div className="stat-card success">
-          <div className="stat-icon">📈</div>
+          <div className="stat-icon-wrapper">
+            <IconTrendingUp size={24} />
+          </div>
           <div className="stat-content">
             <h3>Revenus</h3>
             <p className="stat-amount">{formatAmount(stats.totalRevenus)}</p>
@@ -189,7 +208,9 @@ function Dashboard() {
         </div>
 
         <div className="stat-card info">
-          <div className="stat-icon">🏦</div>
+          <div className="stat-icon-wrapper">
+            <IconPiggyBank size={24} />
+          </div>
           <div className="stat-content">
             <h3>Épargne</h3>
             <p className="stat-amount">{formatAmount(stats.totalEpargne)}</p>
@@ -200,29 +221,33 @@ function Dashboard() {
       {/* Graphiques */}
       <div className="charts-container">
         <div className="chart-box">
-          <h3>Répartition des dépenses</h3>
+          <div className="chart-header">
+            <h3>Répartition des dépenses</h3>
+          </div>
           {stats.totalDepenses > 0 ? (
-            <Pie data={getCategoryData()} options={{ responsive: true, maintainAspectRatio: true }} />
+            <div className="chart-wrapper">
+              <Pie data={getCategoryData()} options={{ responsive: true, maintainAspectRatio: false }} />
+            </div>
           ) : (
-            <p className="no-data">Aucune dépense pour cette période</p>
+            <p className="no-data">Aucune dépense enregistrée sur cette période</p>
           )}
         </div>
 
         <div className="chart-box">
-          <h3>Évolution du solde</h3>
+          <div className="chart-header">
+            <h3>Évolution du solde</h3>
+          </div>
           {actions.length > 0 ? (
-            <Line 
-              data={getEvolutionData()} 
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: true,
-                plugins: {
-                  legend: {
-                    display: false
-                  }
-                }
-              }} 
-            />
+            <div className="chart-wrapper">
+              <Line 
+                data={getEvolutionData()} 
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } }
+                }} 
+              />
+            </div>
           ) : (
             <p className="no-data">Aucune donnée disponible</p>
           )}
@@ -231,13 +256,23 @@ function Dashboard() {
 
       {/* Aperçu des budgets */}
       <div className="budgets-overview">
-        <h3>Mes budgets actifs</h3>
+        <div className="overview-header">
+          <h3>Budgets actifs</h3>
+        </div>
         {budgets.length > 0 ? (
           <div className="budgets-grid">
             {budgets.slice(0, 3).map(budget => (
               <div key={budget.id} className="budget-card-mini">
-                <h4>{budget.name}</h4>
-                <p className="budget-type">{budget.type === 'FIXE' ? '📌 Fixe' : '🔄 Évolutif'}</p>
+                <div className="mini-header">
+                  <h4>{budget.name}</h4>
+                  <span className={`budget-badge ${budget.type.toLowerCase()}`}>
+                    {budget.type === 'FIXE' ? (
+                      <><IconPin size={12} /> Fixe</>
+                    ) : (
+                      <><IconRefresh size={12} /> Évolutif</>
+                    )}
+                  </span>
+                </div>
                 <p className="budget-balance">{formatAmount(budget.currentBalance || 0)}</p>
               </div>
             ))}

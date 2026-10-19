@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createAction } from '../utils/data';
 import { DEFAULT_CATEGORIES, validateAction } from '../utils/helpers';
-import { Timestamp } from 'firebase/firestore';
+import { IconTrendingDown, IconTrendingUp, IconPiggyBank, IconX } from './Icons';
 
 function ActionForm({ budgets, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -27,7 +27,6 @@ function ActionForm({ budgets, onClose, onSuccess }) {
     e.preventDefault();
     setError('');
 
-    // Validation
     const validation = validateAction({
       ...formData,
       amount: parseFloat(formData.amount)
@@ -46,7 +45,7 @@ function ActionForm({ budgets, onClose, onSuccess }) {
       description: formData.description,
       budgetId: formData.budgetId,
       category: formData.category,
-      date: Timestamp.fromDate(new Date(formData.date))
+      date: formData.date
     };
 
     const result = await createAction(actionData);
@@ -63,34 +62,39 @@ function ActionForm({ budgets, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Ajouter une action</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <h2>Enregistrer une opération</h2>
+          <button className="close-btn" onClick={onClose}>
+            <IconX size={20} />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="action-form">
           <div className="form-group">
-            <label>Type d'action</label>
+            <label>Type d'opération</label>
             <div className="type-selector">
               <button
                 type="button"
                 className={formData.type === 'DEPENSE' ? 'type-btn active danger' : 'type-btn'}
                 onClick={() => setFormData({ ...formData, type: 'DEPENSE' })}
               >
-                📉 Dépense
+                <IconTrendingDown size={16} />
+                <span>Dépense</span>
               </button>
               <button
                 type="button"
                 className={formData.type === 'REVENU' ? 'type-btn active success' : 'type-btn'}
                 onClick={() => setFormData({ ...formData, type: 'REVENU' })}
               >
-                📈 Revenu
+                <IconTrendingUp size={16} />
+                <span>Revenu</span>
               </button>
               <button
                 type="button"
                 className={formData.type === 'EPARGNE' ? 'type-btn active info' : 'type-btn'}
                 onClick={() => setFormData({ ...formData, type: 'EPARGNE' })}
               >
-                🏦 Épargne
+                <IconPiggyBank size={16} />
+                <span>Épargne</span>
               </button>
             </div>
           </div>
@@ -102,7 +106,7 @@ function ActionForm({ budgets, onClose, onSuccess }) {
               name="amount"
               value={formData.amount}
               onChange={handleChange}
-              placeholder="10000"
+              placeholder="Ex: 15000"
               required
               min="0"
               step="1"
@@ -116,13 +120,13 @@ function ActionForm({ budgets, onClose, onSuccess }) {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Ex: Courses du mois"
+              placeholder="Ex: Achats de fournitures, Vente produit..."
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Budget</label>
+            <label>Budget rattaché</label>
             <select
               name="budgetId"
               value={formData.budgetId}
@@ -132,7 +136,7 @@ function ActionForm({ budgets, onClose, onSuccess }) {
               <option value="">Sélectionner un budget</option>
               {budgets.map(budget => (
                 <option key={budget.id} value={budget.id}>
-                  {budget.name} ({budget.type})
+                  {budget.name} ({budget.type === 'FIXE' ? 'Fixe' : 'Évolutif'})
                 </option>
               ))}
             </select>
@@ -147,14 +151,14 @@ function ActionForm({ budgets, onClose, onSuccess }) {
             >
               {DEFAULT_CATEGORIES.map(cat => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="form-group">
-            <label>Date</label>
+            <label>Date de l'opération</label>
             <input
               type="date"
               name="date"
@@ -171,7 +175,7 @@ function ActionForm({ budgets, onClose, onSuccess }) {
               Annuler
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Ajout...' : 'Ajouter'}
+              {loading ? 'Enregistrement...' : 'Valider la transaction'}
             </button>
           </div>
         </form>
